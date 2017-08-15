@@ -1,5 +1,23 @@
 var fixmystreet = fixmystreet || {};
 
+fixmystreet.utils = fixmystreet.utils || {};
+
+$.extend(fixmystreet.utils, {
+    parse_query_string: function() {
+        var qs = {};
+        if (!location.search) {
+            return qs;
+        }
+        location.search.substring(1).split(/[;&]/).forEach(function(i) {
+            var s = i.split('='),
+                k = s[0],
+                v = s[1] && decodeURIComponent(s[1].replace(/\+/g, ' '));
+            qs[k] = v;
+        });
+        return qs;
+    }
+});
+
 (function() {
 
     fixmystreet.maps = fixmystreet.maps || {};
@@ -281,7 +299,7 @@ var fixmystreet = fixmystreet || {};
         if (!location.search) {
             return qs;
         }
-        location.search.substring(1).split('&').forEach(function(i) {
+        location.search.substring(1).split(/[&;]/).forEach(function(i) {
             var s = i.split('='),
                 k = s[0],
                 v = s[1] && decodeURIComponent(s[1].replace(/\+/g, ' '));
@@ -300,15 +318,7 @@ var fixmystreet = fixmystreet || {};
         return value;
     }
 
-    function categories_or_status_changed_history() {
-        if (!('pushState' in history)) {
-            return;
-        }
-        var qs = parse_query_string();
-        var filter_categories = replace_query_parameter(qs, 'filter_categories', 'filter_category');
-        var filter_statuses = replace_query_parameter(qs, 'statuses', 'status');
-        var sort_key = replace_query_parameter(qs, 'sort', 'sort');
-        delete qs.p;
+    function update_url(qs) {
         var new_url;
         if ($.isEmptyObject(qs)) {
             new_url = location.href.replace(location.search, "");
@@ -317,6 +327,37 @@ var fixmystreet = fixmystreet || {};
         } else {
             new_url = location.href + '?' + $.param(qs);
         }
+        return new_url;
+    }
+
+    function page_changed_history() {
+        if (!('pushState' in history)) {
+            return;
+        }
+        var qs = fixmystreet.utils.parse_query_string();
+
+        var page = $('.pagination').data('page');
+        if (page > 1) {
+            qs.p = page;
+        } else {
+            delete qs.p;
+        }
+        var new_url = update_url(qs);
+        history.pushState({
+            page_change: { 'page': page }
+        }, null, new_url);
+    }
+
+    function categories_or_status_changed_history() {
+        if (!('pushState' in history)) {
+            return;
+        }
+        var qs = fixmystreet.utils.parse_query_string();
+        var filter_categories = replace_query_parameter(qs, 'filter_categories', 'filter_category');
+        var filter_statuses = replace_query_parameter(qs, 'statuses', 'status');
+        var sort_key = replace_query_parameter(qs, 'sort', 'sort');
+        delete qs.p;
+        var new_url = update_url(qs);
         history.pushState({
             filter_change: { 'filter_categories': filter_categories, 'statuses': filter_statuses, 'sort': sort_key }
         }, null, new_url);
@@ -386,7 +427,7 @@ var fixmystreet = fixmystreet || {};
                     f.geometry = new_geometry;
                     this.removeAllFeatures();
                     this.addFeatures([f]);
-                    var qs = parse_query_string();
+                    var qs = fixmystreet.utils.parse_query_string();
                     if (!qs.bbox) {
                         zoomToBounds(extent);
                     }
@@ -543,9 +584,22 @@ var fixmystreet = fixmystreet || {};
             $("#filter_categories").on("change.filters", categories_or_status_changed);
             $("#statuses").on("change.filters", categories_or_status_changed);
             $("#sort").on("change.filters", categories_or_status_changed);
+            $('.js-pagination').on('change.filters', categories_or_status_changed);
+            $('.js-pagination').on('click', 'a', function(e) {
+                e.preventDefault();
+                var page = $('.pagination').data('page');
+                if ($(this).hasClass('next')) {
+                    $('.pagination').data('page', page + 1);
+                } else {
+                    $('.pagination').data('page', page - 1);
+                }
+                fixmystreet.markers.protocol.use_page = true;
+                $(this).trigger('change');
+            });
             $("#filter_categories").on("change.user", categories_or_status_changed_history);
             $("#statuses").on("change.user", categories_or_status_changed_history);
             $("#sort").on("change.user", categories_or_status_changed_history);
+            $('.js-pagination').on('click', 'a', page_changed_history);
         } else if (fixmystreet.page == 'new') {
             drag.activate();
         }
@@ -790,6 +844,9 @@ OpenLayers.Strategy.FixMyStreetFixed = OpenLayers.Class(OpenLayers.Strategy.Fixe
 // This subclass is required so we can pass the 'filter_category' and 'status' query
 // params to /around?ajax if the user has filtered the map.
 OpenLayers.Protocol.FixMyStreet = OpenLayers.Class(OpenLayers.Protocol.HTTP, {
+    initial_page: null,
+    use_page: false,
+
     read: function(options) {
         // Show the loading indicator over the map
         $('#loading-indicator').removeClass('hidden');
@@ -802,6 +859,16 @@ OpenLayers.Protocol.FixMyStreet = OpenLayers.Class(OpenLayers.Protocol.HTTP, {
                 options.params[key] = val;
             }
         });
+        if (this.use_page) {
+            var page = $('.pagination').data('page');
+            this.use_page = false;
+        } else if (this.initial_page) {
+            page = 1;
+        } else {
+            var qs = fixmystreet.utils.parse_query_string();
+            this.initial_page = page = qs.p || 1;
+        }
+        options.params.p = page;
         return OpenLayers.Protocol.HTTP.prototype.read.apply(this, [options]);
     },
     CLASS_NAME: "OpenLayers.Protocol.FixMyStreet"
