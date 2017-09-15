@@ -1,0 +1,8 @@
+    [% IF c.user.from_body %]
+      data-none="[% loc('All unresolved') %]"
+      data-all-options='["confirmed","investigating","action scheduled","closed","fixed - council","not responsible","duplicate","unable to fix"]'
+    [% ELSE %]
+      data-none="[% loc('Open') %]"
+      data-all-options='["open","closed","fixed"]'
+    [%~ END ~%]
+    data-all="[% loc('All') %]"
