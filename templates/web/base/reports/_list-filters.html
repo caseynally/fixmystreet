@@ -1,8 +1,15 @@
 [% select_status = BLOCK %]
     <select class="form-control js-multiple" name="status" id="statuses" multiple
-      data-all="[% loc('All') %]" data-all-options='["open","closed","fixed"]'
     [%~ IF c.cobrand.on_map_default_status == 'open' %]
-      data-none="[% loc('Unfixed reports') %]"
+      data-all="[% loc('Unfixed reports') %]"
+      [% IF c.user.from_body %]
+      data-all-options='["confirmed", "investigating", "action scheduled"]'
+      [% ELSE %]
+      data-all-options='["open"]'
+      [% END %]
+    [% ELSE %]
+      data-all="[% loc('All') %]" 
+      data-all-options='["open","closed","fixed"]'
     [%~ END ~%]
       >
       [% IF c.user_exists AND c.user.has_body_permission_to('planned_reports') AND !shortlist %]
