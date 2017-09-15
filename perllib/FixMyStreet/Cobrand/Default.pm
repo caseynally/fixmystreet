@@ -462,6 +462,15 @@ Return the default ?status= query parameter to use for filter on map page.
 
 sub on_map_default_status { return 'all'; }
 
+=head2 on_map_default_body_user_status
+
+Return the default ?status query paramater to use for filters on the
+map page if the user is from the body.
+
+=cut
+
+sub on_map_default_body_user_status { return (shift->on_map_default_status); }
+
 =head2 allow_photo_upload
 
 Return a boolean indicating whether the cobrand allows photo uploads

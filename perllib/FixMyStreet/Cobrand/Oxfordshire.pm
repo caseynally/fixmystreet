@@ -160,6 +160,8 @@ sub open311_pre_send {
 
 sub on_map_default_status { return 'open'; }
 
+sub on_map_default_body_user_status { return ('confirmed', 'investigating', 'action scheduled'); }
+
 sub contact_email {
     my $self = shift;
     return join( '@', 'highway.enquiries', 'oxfordshire.gov.uk' );

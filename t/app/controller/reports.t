@@ -1,4 +1,5 @@
 use Test::MockTime qw(:all);
+use Test::MockModule;
 use FixMyStreet::TestMech;
 use mySociety::MaPit;
 use FixMyStreet::App;
@@ -314,6 +315,40 @@ subtest "it allows body users to filter by subtypes" => sub {
 
         $mech->content_lacks('Investigating report');
         $mech->content_contains('In progress report');
+        $mech->content_lacks('A Scheduled report');
+    };
+};
+
+subtest "it allows cobrands to set default body user filters" => sub {
+    my $cobrand = Test::MockModule->new('FixMyStreet::Cobrand::Default');
+    $cobrand->mock('on_map_default_body_user_status', sub { ('confirmed', 'investigating') });
+
+    FixMyStreet::override_config {
+        MAPIT_URL => 'http://mapit.uk/'
+    }, sub {
+        my $body = FixMyStreet::App->model('DB::Body')->find( $body_edin_id );
+        my $user = $mech->log_in_ok( 'test@example.com' );
+        $user->update({ from_body => $body });
+
+        my ($investigating_problem) = $mech->create_problems_for_body(1, $body_edin_id, 'Investigating report');
+        my ($scheduled_problem) = $mech->create_problems_for_body(1, $body_edin_id, 'A Scheduled report');
+        my ($in_progress_problem) = $mech->create_problems_for_body(1, $body_edin_id, 'In progress report');
+
+        $investigating_problem->update({ state => 'investigating' });
+        $scheduled_problem->update({ state => 'action scheduled' });
+        $in_progress_problem->update({ state => 'in progress' });
+
+        $mech->get_ok('/reports/City+of+Edinburgh+Council');
+        $mech->content_contains('<option value="investigating" selected>Investigating</option>');
+        $mech->content_contains('<option value="in progress">In progress</option>');
+        $mech->content_contains('<option value="action scheduled">Action scheduled</option>');
+        $mech->content_contains('<option value="unable to fix">No further action</option>');
+        $mech->content_contains('<option value="not responsible">Not responsible</option>');
+        $mech->content_contains('<option value="internal referral">Internal referral</option>');
+        $mech->content_contains('<option value="duplicate">Duplicate</option>');
+
+        $mech->content_contains('Investigating report');
+        $mech->content_lacks('In progress report');
         $mech->content_lacks('A Scheduled report');
     };
 };

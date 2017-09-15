@@ -519,7 +519,13 @@ sub stash_report_filter_status : Private {
     my ( $self, $c ) = @_;
 
     my @status = $c->get_param_list('status', 1);
-    @status = ($c->cobrand->on_map_default_status) unless @status;
+    unless (@status) {
+        if ($c->user && $c->stash->{body} && $c->user->from_body && $c->user->from_body->id == $c->stash->{body}->id) {
+            @status = $c->cobrand->on_map_default_body_user_status;
+        } else {
+            @status = ($c->cobrand->on_map_default_status);
+        }
+    }
     my %status = map { $_ => 1 } @status;
 
     my %filter_problem_states;
