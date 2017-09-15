@@ -114,10 +114,11 @@ function isR2L() {
     make_multi: function() {
         var $this = $(this),
             all = $this.data('all'),
+            none = $this.data('none') || all,
             allOpts = $this.data('all-options') || [];
         $this.multiSelect({
             allText: all,
-            noneText: all,
+            noneText: none,
             positionMenuWithin: $('#side'),
             presets: [{
                 name: all,
