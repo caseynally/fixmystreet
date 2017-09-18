@@ -1,6 +1,8 @@
 ## Releases
 
 * Unreleased
+    - Admin improvements:
+        - Public report page shows state changes made in admin interface #1846
 
 * v2.2 (13th September 2017)
     - New features:

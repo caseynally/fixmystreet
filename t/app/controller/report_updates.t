@@ -918,16 +918,43 @@ subtest 'check meta correct for second comment marking as reopened' => sub {
     like $update_meta->[2], qr/Open/, 'update meta says reopened';
 };
 
-subtest "check first comment with status change but no text is displayed" => sub {
-    $user->from_body( $body->id );
-    $user->update;
+for my $test(
+    {
+      user => $user2,
+      name => $body->name,
+      body => $body,
+      superuser => 0,
+      desc =>"check first comment from body user with status change but no text is displayed"
+    },
+    {
+      user => $user2,
+      name => $body->name,
+      body => $body,
+      superuser => 1,
+      desc =>"check first comment from body super user with status change but no text is displayed"
+    },
+    {
+      user => $user2,
+      name => 'admin',
+      superuser => 1,
+      desc =>"check first comment from super user with status change but no text is displayed"
+    }
+) {
+subtest $test->{desc} => sub {
+    if ($test->{body}) {
+        $user2->from_body( $test->{body}->id );
+    } else {
+        $user2->from_body(undef);
+    }
+    $user2->is_superuser($test->{superuser});
+    $user2->update;
 
     $report->comments->delete;
 
     my $comment = FixMyStreet::App->model('DB::Comment')->create(
         {
-            user          => $user,
-            name          => $user->from_body->name,
+            user          => $test->{user},
+            name          => $test->{name},
             problem_id    => $report->id,
             text          => '',
             confirmed     => DateTime->now( time_zone => 'local'),
@@ -940,11 +967,17 @@ subtest "check first comment with status change but no text is displayed" => sub
     );
     $mech->log_in_ok( $user->email );
 
+
+    ok $user->user_body_permissions->search({
+      body_id => $body->id,
+      permission_type => 'view_body_contribute_details'
+    })->delete, 'Remove user view_body_contribute_details permissions';
+
     $mech->get_ok("/report/$report_id");
 
     my $update_meta = $mech->extract_update_metas;
     like $update_meta->[1], qr/Updated by/, 'updated by meta if no text';
-    unlike $update_meta->[1], qr/Test User/, 'commenter name not included';
+    unlike $update_meta->[1], qr/Commenter/, 'commenter name not included';
     like $update_meta->[0], qr/investigating/i, 'update meta includes state change';
 
     ok $user->user_body_permissions->create({
@@ -955,10 +988,14 @@ subtest "check first comment with status change but no text is displayed" => sub
     $mech->get_ok("/report/$report_id");
     $update_meta = $mech->extract_update_metas;
     like $update_meta->[1], qr/Updated by/, 'updated by meta if no text';
-    like $update_meta->[1], qr/Test User/, 'commenter name included if user has view contribute permission';
+    like $update_meta->[1], qr/Commenter/, 'commenter name included if user has view contribute permission';
     like $update_meta->[0], qr/investigating/i, 'update meta includes state change';
 };
+}
 
+$user2->is_superuser(0);
+$user2->from_body(undef);
+$user2->update;
 
 $user->from_body(undef);
 $user->update;
@@ -966,6 +1003,7 @@ $user->update;
 $report->state('confirmed');
 $report->bodies_str($body->id);
 $report->update;
+$report->comments->delete;
 
 for my $test (
     {

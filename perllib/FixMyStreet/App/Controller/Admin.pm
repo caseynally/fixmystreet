@@ -903,6 +903,28 @@ sub report_edit : Path('report_edit') : Args(1) {
 
         if ( $problem->state ne $old_state ) {
             $c->forward( 'log_edit', [ $id, 'problem', 'state_change' ] );
+
+            unless (
+              $problem->state eq 'unconfirmed' || $old_state eq 'unconfirmed' ||
+              $problem->state eq 'hidden' || $old_state eq 'hidden'
+            ) {
+                my $name = _('admin');
+                if ($c->user->from_body) {
+                    $name = $c->user->from_body->name;
+                }
+                my $timestamp = \'current_timestamp';
+                $problem->add_to_comments( {
+                    text => '',
+                    created => $timestamp,
+                    confirmed => $timestamp,
+                    user_id => $c->user->id,
+                    name => $name,
+                    mark_fixed => 0,
+                    anonymous => 0,
+                    state => 'confirmed',
+                    problem_state => $problem->state
+                } );
+            }
         }
         $c->forward( 'log_edit', [ $id, 'problem', 'edit' ] );
 

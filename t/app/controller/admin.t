@@ -438,6 +438,7 @@ foreach my $test (
             flagged    => 'on',
             non_public => undef,
         },
+        expect_comment => 1,
         changes   => { state => 'fixed' },
         log_entries =>
           [qw/edit state_change edit state_change edit state_change edit edit edit edit edit/],
@@ -520,10 +521,37 @@ foreach my $test (
         ],
         resend => 0,
     },
+    {
+        description => 'change state to investigating as body superuser',
+        fields      => {
+            title      => 'Edited Report',
+            detail     => 'Edited Detail',
+            state      => 'confirmed',
+            name       => 'Edited User',
+            email      => $user2->email,
+            anonymous  => 1,
+            flagged    => 'on',
+            non_public => 'on',
+        },
+        expect_comment => 1,
+        user_body => $oxfordshire,
+        changes   => { state => 'investigating' },
+        log_entries => [
+            qw/edit state_change edit resend edit state_change edit state_change edit state_change edit state_change edit state_change edit edit edit edit edit/
+        ],
+        resend => 0,
+    },
   )
 {
     subtest $test->{description} => sub {
+        $report->comments->delete;
         $log_entries->reset;
+
+        if ( $test->{user_body} ) {
+            $superuser->from_body( $test->{user_body}->id );
+            $superuser->update;
+        }
+
         $mech->get_ok("/admin/report_edit/$report_id");
 
         @{$test->{fields}}{'external_id', 'external_body', 'external_team', 'category'} = (13, "", "", "Other");
@@ -565,6 +593,23 @@ foreach my $test (
             $mech->content_contains( 'That problem will now be resent' );
             is $report->whensent, undef, 'mark report to resend';
         }
+
+        if ( $test->{expect_comment} ) {
+            my $comment = $report->comments->first;
+            ok $comment, 'report status change creates comment';
+            is $report->comments->count, 1, 'report only has one comment';
+            is $comment->text, '', 'comment has no text';
+            if ( $test->{user_body} ) {
+                is $comment->name, $test->{user_body}->name, 'comment name is body name';
+            } else {
+                is $comment->name, _('admin'), 'comment name is admin';
+            }
+        } else {
+            is $report->comments->count, 0, 'report has no comments';
+        }
+
+        $superuser->from_body(undef);
+        $superuser->update;
     };
 }
 
