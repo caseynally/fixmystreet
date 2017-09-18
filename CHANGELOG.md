@@ -1,6 +1,8 @@
 ## Releases
 
 * Unreleased
+    - Bugfixes:
+        - Report status filter All option works for body users #1845
 
 * v2.2 (13th September 2017)
     - New features:
