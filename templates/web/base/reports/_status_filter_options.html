@@ -1,4 +1,9 @@
     [%~ IF c.cobrand.on_map_default_status == 'open' %]
       data-none="[% loc('Open') %]"
     [%~ END ~%]
-    data-all="[% loc('All') %]" data-all-options='["open","closed","fixed"]'
+    data-all="[% loc('All') %]"
+    [%~ IF c.user.is_superuser OR c.user.from_body == body ~%]
+    data-all-options='["confirmed","investigating","action scheduled","closed","fixed - council","in progress", "internal referral", "not responsible","duplicate","unable to fix"]'
+    [%~ ELSE ~%]
+    data-all-options='["open","closed","fixed"]'
+    [%~ END ~%]
