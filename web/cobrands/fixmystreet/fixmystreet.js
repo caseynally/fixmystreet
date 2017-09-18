@@ -115,15 +115,23 @@ function isR2L() {
         var $this = $(this),
             all = $this.data('all'),
             none = $this.data('none') || all,
-            allOpts = $this.data('all-options') || [];
+            allOpts = $this.data('all-options') || [],
+            extra = $this.data('extra'),
+            extraOpts = $this.data('extra-options') || [];
+
+            var presets = [{
+                name: all,
+                options: allOpts
+            }];
+
+            if (extra) {
+                presets.push({name: extra, options: extraOpts});
+            }
         $this.multiSelect({
             allText: all,
             noneText: none,
             positionMenuWithin: $('#side'),
-            presets: [{
-                name: all,
-                options: allOpts
-            }]
+            presets: presets
         });
     }
 

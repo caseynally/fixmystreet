@@ -1,6 +1,8 @@
-    [% IF c.user.from_body %]
+    [% IF c.user.is_superuser OR c.user.from_body %]
       data-none="[% loc('All unresolved') %]"
-      data-all-options='["confirmed","investigating","action scheduled","closed","fixed - council","not responsible","duplicate","unable to fix"]'
+      data-extra="[% loc('All unresolved') %]"
+      data-all-options='["confirmed","investigating","action scheduled","fixed - council","not responsible","duplicate","unable to fix"]'
+      data-extra-options='["confirmed","investigating","action scheduled"]'
     [% ELSE %]
       data-none="[% loc('Open') %]"
       data-all-options='["open","closed","fixed"]'
