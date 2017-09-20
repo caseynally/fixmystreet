@@ -909,8 +909,11 @@ sub report_edit : Path('report_edit') : Args(1) {
               $problem->state eq 'hidden' || $old_state eq 'hidden'
             ) {
                 my $name = _('an adminstrator');
+                my $extra = { is_superuser => 1 };
                 if ($c->user->from_body) {
                     $name = $c->user->from_body->name;
+                    delete $extra->{is_superuser};
+                    $extra->{is_body_user} = 1;
                 }
                 my $timestamp = \'current_timestamp';
                 $problem->add_to_comments( {
@@ -922,7 +925,8 @@ sub report_edit : Path('report_edit') : Args(1) {
                     mark_fixed => 0,
                     anonymous => 0,
                     state => 'confirmed',
-                    problem_state => $problem->state
+                    problem_state => $problem->state,
+                    extra => $extra
                 } );
             }
         }

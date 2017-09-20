@@ -229,7 +229,7 @@ sub meta_line {
 
     if ($self->anonymous or !$self->name) {
         $meta = sprintf( _( 'Posted anonymously at %s' ), Utils::prettify_dt( $self->confirmed ) )
-    } elsif ($self->user->from_body || ( $self->name eq _('admin') && $self->user->is_superuser)) {
+    } elsif ($self->user->from_body || $self->get_extra_metadata('is_body_user') || $self->get_extra_metadata('is_superuser') ) {
         my $user_name = FixMyStreet::Template::html_filter($self->user->name);
         my $body = $self->user->body;
         if ($body eq 'Bromley Council') {
@@ -237,8 +237,8 @@ sub meta_line {
         } elsif ($body eq 'Royal Borough of Greenwich') {
             $body = "$body <img src='/cobrands/greenwich/favicon.png' alt=''>";
         }
-        if ($self->name eq _('admin') && !$self->user->from_body) {
-            $body = _('admin');
+        if ($self->get_extra_metadata('is_superuser')) {
+            $body = _('an administrator');
         }
         my $can_view_contribute = $c->user_exists && $c->user->has_permission_to('view_body_contribute_details', $self->problem->bodies_str_ids);
         if ($self->text) {

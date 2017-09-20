@@ -935,15 +935,18 @@ for my $test(
     },
     {
       user => $user2,
-      name => 'admin',
+      name => 'an adminstrator',
       superuser => 1,
       desc =>"check first comment from super user with status change but no text is displayed"
     }
 ) {
 subtest $test->{desc} => sub {
+    my $extra = {};
     if ($test->{body}) {
+        $extra->{is_body_user} = 1;
         $user2->from_body( $test->{body}->id );
     } else {
+        $extra->{is_superuser} = 1;
         $user2->from_body(undef);
     }
     $user2->is_superuser($test->{superuser});
@@ -963,6 +966,7 @@ subtest $test->{desc} => sub {
             mark_open     => 0,
             mark_fixed    => 0,
             state         => 'confirmed',
+            extra         => $extra,
         }
     );
     $mech->log_in_ok( $user->email );

@@ -600,9 +600,13 @@ foreach my $test (
             is $report->comments->count, 1, 'report only has one comment';
             is $comment->text, '', 'comment has no text';
             if ( $test->{user_body} ) {
+                ok $comment->get_extra_metadata('is_body_user'), 'body user metadata set';
+                ok !$comment->get_extra_metadata('is_superuser'), 'superuser metadata not set';
                 is $comment->name, $test->{user_body}->name, 'comment name is body name';
             } else {
-                is $comment->name, _('admin'), 'comment name is admin';
+                ok !$comment->get_extra_metadata('is_body_user'), 'body user metadata not set';
+                ok $comment->get_extra_metadata('is_superuser'), 'superuser metadata set';
+                is $comment->name, _('an adminstrator'), 'comment name is admin';
             }
         } else {
             is $report->comments->count, 0, 'report has no comments';
