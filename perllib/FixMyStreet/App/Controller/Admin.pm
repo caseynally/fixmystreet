@@ -908,7 +908,7 @@ sub report_edit : Path('report_edit') : Args(1) {
               $problem->state eq 'unconfirmed' || $old_state eq 'unconfirmed' ||
               $problem->state eq 'hidden' || $old_state eq 'hidden'
             ) {
-                my $name = _('admin');
+                my $name = _('an adminstrator');
                 if ($c->user->from_body) {
                     $name = $c->user->from_body->name;
                 }
