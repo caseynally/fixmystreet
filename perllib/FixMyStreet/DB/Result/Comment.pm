@@ -231,7 +231,14 @@ sub meta_line {
         $meta = sprintf( _( 'Posted anonymously at %s' ), Utils::prettify_dt( $self->confirmed ) )
     } elsif ($self->user->from_body || $self->get_extra_metadata('is_body_user') || $self->get_extra_metadata('is_superuser') ) {
         my $user_name = FixMyStreet::Template::html_filter($self->user->name);
-        my $body = $self->user->body;
+        my $body;
+        # use this meta data in preference to the user's from_body setting
+        # in case they are no longer with the body, or have changed body.
+        if (my $body_id = $self->get_extra_metadata('is_body_user')) {
+            $body = FixMyStreet::App->model('DB::Body')->find({id => $body_id})->name;
+        } else {
+            $body = $self->user->body;
+        }
         if ($body eq 'Bromley Council') {
             $body = "$body <img src='/cobrands/bromley/favicon.png' alt=''>";
         } elsif ($body eq 'Royal Borough of Greenwich') {

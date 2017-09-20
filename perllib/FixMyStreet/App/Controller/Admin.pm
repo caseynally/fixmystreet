@@ -913,7 +913,7 @@ sub report_edit : Path('report_edit') : Args(1) {
                 if ($c->user->from_body) {
                     $name = $c->user->from_body->name;
                     delete $extra->{is_superuser};
-                    $extra->{is_body_user} = 1;
+                    $extra->{is_body_user} = $c->user->from_body->id;
                 }
                 my $timestamp = \'current_timestamp';
                 $problem->add_to_comments( {

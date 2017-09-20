@@ -929,6 +929,13 @@ for my $test(
     {
       user => $user2,
       name => $body->name,
+      superuser => 0,
+      bodyuser => 1,
+      desc =>"check first comment from ex body user with status change but no text is displayed"
+    },
+    {
+      user => $user2,
+      name => $body->name,
       body => $body,
       superuser => 1,
       desc =>"check first comment from body super user with status change but no text is displayed"
@@ -943,10 +950,14 @@ for my $test(
 subtest $test->{desc} => sub {
     my $extra = {};
     if ($test->{body}) {
-        $extra->{is_body_user} = 1;
+        $extra->{is_body_user} = $test->{body}->id;
         $user2->from_body( $test->{body}->id );
     } else {
-        $extra->{is_superuser} = 1;
+        if ($test->{superuser}) {
+            $extra->{is_superuser} = 1;
+        } elsif ($test->{bodyuser}) {
+            $extra->{is_body_user} = $body->id;
+        }
         $user2->from_body(undef);
     }
     $user2->is_superuser($test->{superuser});
@@ -983,6 +994,12 @@ subtest $test->{desc} => sub {
     like $update_meta->[1], qr/Updated by/, 'updated by meta if no text';
     unlike $update_meta->[1], qr/Commenter/, 'commenter name not included';
     like $update_meta->[0], qr/investigating/i, 'update meta includes state change';
+
+    if ($test->{body} || $test->{bodyuser}) {
+        like $update_meta->[1], qr/Westminster/, 'body user update uses body name';
+    } elsif ($test->{superuser}) {
+        like $update_meta->[1], qr/an administrator/, 'superuser update says an administrator';
+    }
 
     ok $user->user_body_permissions->create({
       body => $body,
