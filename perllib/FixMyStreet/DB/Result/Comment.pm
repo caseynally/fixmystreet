@@ -238,7 +238,6 @@ sub meta_line {
             $body = "$body <img src='/cobrands/greenwich/favicon.png' alt=''>";
         }
         if ($self->name eq _('admin') && !$self->user->from_body) {
-            $c->log->debug('admin');
             $body = _('admin');
         }
         my $can_view_contribute = $c->user_exists && $c->user->has_permission_to('view_body_contribute_details', $self->problem->bodies_str_ids);
