@@ -1014,6 +1014,95 @@ subtest $test->{desc} => sub {
 };
 }
 
+for my $test(
+    {
+      desc =>"check comment from super user hiding report is not displayed",
+      problem_state => 'hidden',
+    },
+    {
+      desc =>"check comment from super user unconfirming report is not displayed",
+      problem_state => 'unconfirmed',
+    }
+) {
+subtest $test->{desc} => sub {
+    my $extra = { is_superuser => 1 };
+    $user2->is_superuser(1);
+    $user2->update;
+
+    $report->comments->delete;
+
+    my $comment = FixMyStreet::App->model('DB::Comment')->create(
+        {
+            user          => $user2,
+            name          => 'an administrator',
+            problem_id    => $report->id,
+            text          => '',
+            confirmed     => DateTime->now( time_zone => 'local'),
+            problem_state => $test->{problem_state},
+            anonymous     => 0,
+            mark_open     => 0,
+            mark_fixed    => 0,
+            state         => 'confirmed',
+            extra         => $extra,
+        }
+    );
+    $mech->log_in_ok( $user->email );
+    $mech->get_ok("/report/$report_id");
+
+    my $update_meta = $mech->extract_update_metas;
+    is scalar(@$update_meta), 0, 'no comments on report';
+  };
+}
+
+for my $test(
+    {
+      desc =>"check comments from super user hiding and unhiding report are not displayed",
+      problem_states => [qw/hidden confirmed/],
+      comment_count => 0,
+    },
+    {
+      desc =>"check comment from super user unconfirming and confirming report are is not displayed",
+      problem_states => [qw/unconfirmed confirmed/],
+      comment_count => 0,
+    },
+    {
+      desc =>"check comment after unconfirming and confirming a report is displayed",
+      problem_states => [qw/unconfirmed confirmed investigating/],
+      comment_count => 2, # state change line + who updated line
+    },
+) {
+subtest $test->{desc} => sub {
+    my $extra = { is_superuser => 1 };
+    $user2->is_superuser(1);
+    $user2->update;
+
+    $report->comments->delete;
+
+    for my $state (@{$test->{problem_states}}) {
+        my $comment = FixMyStreet::App->model('DB::Comment')->create(
+            {
+                user          => $user2,
+                name          => 'an administrator',
+                problem_id    => $report->id,
+                text          => '',
+                confirmed     => DateTime->now( time_zone => 'local'),
+                problem_state => $state,
+                anonymous     => 0,
+                mark_open     => 0,
+                mark_fixed    => 0,
+                state         => 'confirmed',
+                extra         => $extra,
+            }
+        );
+    }
+    $mech->log_in_ok( $user->email );
+    $mech->get_ok("/report/$report_id");
+
+    my $update_meta = $mech->extract_update_metas;
+    is scalar(@$update_meta), $test->{comment_count}, 'expected number of comments on report';
+  };
+}
+
 $user2->is_superuser(0);
 $user2->from_body(undef);
 $user2->update;

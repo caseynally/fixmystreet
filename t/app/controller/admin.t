@@ -406,6 +406,7 @@ foreach my $test (
             flagged    => 'on',
             non_public => undef,
         },
+        expect_comment => 1,
         changes   => { state => 'unconfirmed' },
         log_entries => [qw/edit state_change edit edit edit edit edit/],
         resend      => 0,
@@ -422,6 +423,7 @@ foreach my $test (
             flagged    => 'on',
             non_public => undef,
         },
+        expect_comment => 1,
         changes   => { state => 'confirmed' },
         log_entries => [qw/edit state_change edit state_change edit edit edit edit edit/],
         resend      => 0,
@@ -456,6 +458,7 @@ foreach my $test (
             flagged    => 'on',
             non_public => undef,
         },
+        expect_comment => 1,
         changes     => { state => 'hidden' },
         log_entries => [
             qw/edit state_change edit state_change edit state_change edit state_change edit edit edit edit edit/
@@ -474,6 +477,7 @@ foreach my $test (
             flagged    => 'on',
             non_public => undef,
         },
+        expect_comment => 1,
         changes => {
             state     => 'confirmed',
             anonymous => 1,
