@@ -1070,6 +1070,11 @@ for my $test(
       problem_states => [qw/unconfirmed confirmed investigating/],
       comment_count => 2, # state change line + who updated line
     },
+    {
+      desc =>"check comment after confirming a report after blank state is not displayed",
+      problem_states => ['unconfirmed', '', 'confirmed'],
+      comment_count => 0, # state change line + who updated line
+    },
 ) {
 subtest $test->{desc} => sub {
     my $extra = { is_superuser => 1 };
