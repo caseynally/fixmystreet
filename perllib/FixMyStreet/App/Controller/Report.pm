@@ -423,24 +423,29 @@ sub inspect : Private {
             push @{ $c->stash->{errors} }, _('Invalid location. New location must be covered by the same council.');
         }
 
-        if ($permissions->{report_inspect} || $permissions->{report_edit_category}) {
-            $c->forward( '/admin/report_edit_category', [ $problem ] );
-
-            # The new category might require extra metadata (e.g. pothole size), so
-            # we need to update the problem with the new values.
-            my $param_prefix = lc $problem->category;
-            $param_prefix =~ s/[^a-z]//g;
-            $param_prefix = "category_" . $param_prefix . "_";
-            my @contacts = grep { $_->category eq $problem->category } @{$c->stash->{contacts}};
-            $c->forward('/report/new/set_report_extras', [ \@contacts, $param_prefix ]);
-        }
 
         # Updating priority must come after category, in case category has changed (and so might have priorities)
         if ($c->get_param('priority') && ($permissions->{report_inspect} || $permissions->{report_edit_priority})) {
             $problem->response_priority( $problem->response_priorities->find({ id => $c->get_param('priority') }) );
         }
 
+        if ($permissions->{report_inspect} || $permissions->{report_edit_category}) {
+            $c->stash->{updated_category} = $c->get_param('category');
+        }
+
         if ($valid) {
+            if ($permissions->{report_inspect} || $permissions->{report_edit_category}) {
+                $c->forward( '/admin/report_edit_category', [ $problem ] );
+
+                # The new category might require extra metadata (e.g. pothole size), so
+                # we need to update the problem with the new values.
+                my $param_prefix = lc $problem->category;
+                $param_prefix =~ s/[^a-z]//g;
+                $param_prefix = "category_" . $param_prefix . "_";
+                my @contacts = grep { $_->category eq $problem->category } @{$c->stash->{contacts}};
+                $c->forward('/report/new/set_report_extras', [ \@contacts, $param_prefix ]);
+            }
+
             if ( $reputation_change != 0 ) {
                 $problem->user->update_reputation($reputation_change);
             }
