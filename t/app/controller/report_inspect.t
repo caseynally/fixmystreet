@@ -408,6 +408,37 @@ FixMyStreet::override_config {
 };
 
 FixMyStreet::override_config {
+    MAPIT_URL => 'http://mapit.uk/',
+    ALLOWED_COBRANDS => 'fixmystreet',
+}, sub {
+    subtest "test category not updated if fail to include public update" => sub {
+        $mech->get_ok("/report/$report_id");
+        $mech->submit_form(button => 'save', with_fields => { category => 'Badgers' });
+
+        $report->discard_changes;
+        is $report->category, "Cows", "Report in correct category";
+        $mech->content_contains('Badgers" selected', 'Changed category still selected');
+    };
+
+    subtest "test changing category and leaving an update only creates one comment" => sub {
+        $report->comments->delete;
+        $mech->get_ok("/report/$report_id");
+        $mech->submit_form(
+            button => 'save',
+            with_fields => {
+                category => 'Badgers',
+                include_update => 1,
+                public_update => 'This is a public update',
+        });
+
+        $report->discard_changes;
+        is $report->category, "Badgers", "Report in correct category";
+        is $report->comments->count, 1, "Only leaves one update";
+        like $report->comments->first->text, qr/Category changed.*Badgers/, 'update text included category change';
+    };
+};
+
+FixMyStreet::override_config {
     ALLOWED_COBRANDS => [ 'oxfordshire', 'fixmystreet' ],
     BASE_URL => 'http://fixmystreet.site',
 }, sub {
